@@ -973,14 +973,15 @@
         function checkMatch() {
             const [card1, card2] = flippedCards;
             moves++;
-            
+            updateScores();
+
             if (card1.card.dataset.emoji === card2.card.dataset.emoji) {
                 // ¡Coincidencia!
                 playMatch();
                 const playerClass = currentPlayer === 1 ? 'player1' : 'player2';
                 card1.card.classList.add('matched', playerClass);
                 card2.card.classList.add('matched', playerClass);
-                
+
                 // Incrementar puntuación del jugador actual
                 scores[currentPlayer]++;
                 updateScores();

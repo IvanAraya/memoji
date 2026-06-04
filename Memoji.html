@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, orientation=portrait">
+    <meta name="screen-orientation" content="portrait">
+    <title>Memoji - Juego de Memoria</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Memoji">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        /* Forzar orientación vertical en móviles */
+        @media screen and (max-width: 768px) {
+            body {
+                transform: rotate(0deg);
+                transform-origin: center;
+            }
+            
+            /* Mensaje de orientación horizontal */
+            body.landscape-warning::before {
+                content: "📱 Por favor, gira tu dispositivo a modo vertical para una mejor experiencia de juego";
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0, 0, 0, 0.95);
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                text-align: center;
+                z-index: 10000;
+                padding: 20px;
+                line-height: 1.5;
+            }
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 15px;
+            max-width: 800px;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        h1.hidden {
+            display: none;
+        }
+
+        .game-setup {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .player-mode-selector, .difficulty-selector, .category-selector {
+            margin-bottom: 15px;
+        }
+
+        .player-mode-selector h3, .difficulty-selector h3, .category-selector h3 {
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        .player-mode-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .difficulty-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .category-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .player-mode-btn, .difficulty-btn, .category-btn {
+            padding: 12px 8px;
+            border: none;
+            border-radius: 20px;
+            background: #f0f0f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .player-mode-btn:hover, .difficulty-btn:hover, .category-btn:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        .player-mode-btn.active, .difficulty-btn.active, .category-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .start-btn {
+            padding: 15px 25px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            min-height: 50px;
+            width: 100%;
+            max-width: 200px;
+        }
+
+        .start-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .player-info {
+            text-align: center;
+            flex: 1;
+            padding: 5px;
+        }
+
+        .player-info.active {
+            padding: 8px;
+            border-radius: 8px;
+            border: 3px solid;
+        }
+
+        .player-info.active.player1 {
+            background: #ff6b6b;
+            color: white;
+            border-color: #ff5252;
+        }
+
+        .player-info.active.player2 {
+            background: #4a90e2;
+            color: white;
+            border-color: #357abd;
+        }
+
+        .score {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .moves {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .game-board {
+            display: grid;
+            gap: 6px;
+            margin-bottom: 10px;
+            width: 100%;
+            height: calc(100vh - 200px);
+            max-height: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .game-board.easy {
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+        }
+
+        .game-board.medium {
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+        }
+
+        .game-board.hard {
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+        }
+
+        .card {
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3.5em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .card.flipped {
+            background: white;
+            border-color: #43a047;
+        }
+
+        .card.matched {
+            color: white;
+            cursor: default;
+        }
+
+        .card.matched.player1 {
+            background: #ff6b6b;
+            border-color: #ff5252;
+        }
+
+        .card.matched.player2 {
+            background: #4a90e2;
+            border-color: #357abd;
+        }
+
+        .card.matched:hover {
+            transform: none;
+        }
+
+        .card-back {
+            background: linear-gradient(45deg, #43a047, #66bb6a);
+            color: white;
+            font-size: 2.5em;
+        }
+
+        .controls {
+            text-align: center;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+
+        .reset-btn, .new-game-btn {
+            padding: 12px 20px;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 44px;
+            flex: 1;
+            max-width: 150px;
+        }
+
+        .reset-btn {
+            background: #ff6b6b;
+        }
+
+        .reset-btn:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+
+        .new-game-btn {
+            background: #667eea;
+        }
+
+        .new-game-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .winner-message {
+            text-align: center;
+            font-size: 1.1em;
+            color: #4CAF50;
+            font-weight: bold;
+            margin-top: 8px;
+            padding: 8px;
+            background: #e8f5e8;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .fullscreen-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+
+        .fullscreen-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .fullscreen-btn:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+
+        .fullscreen-btn.active {
+            background: rgba(102, 126, 234, 0.9);
+            color: white;
+        }
+
+        /* Estilos para pantalla completa */
+        .fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            padding: 5px;
+            overflow: hidden;
+        }
+
+        .fullscreen .container {
+            max-width: none;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5px;
+        }
+
+        .fullscreen .game-board {
+            height: calc(100vh - 180px);
+            max-height: none;
+            flex: 1;
+        }
+
+        .fullscreen .game-info {
+            margin-bottom: 5px;
+            padding: 5px;
+        }
+
+        .fullscreen .controls {
+            margin-top: 5px;
+            gap: 5px;
+        }
+
+        .fullscreen .reset-btn, 
+        .fullscreen .new-game-btn {
+            padding: 8px 15px;
+            font-size: 12px;
+            min-height: 35px;
+            max-width: 120px;
+        }
+
+        .fullscreen .winner-message {
+            margin-top: 5px;
+            padding: 5px;
+            font-size: 1em;
+        }
+
+
+        /* Media queries para diferentes tamaños de pantalla */
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+            
+            .container {
+                padding: 10px;
+                border-radius: 10px;
+            }
+            
+            h1 {
+                font-size: 1.6em;
+                margin-bottom: 15px;
+            }
+            
+            .difficulty-buttons {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+            
+            .category-buttons {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+            }
+            
+            .difficulty-btn, .category-btn {
+                font-size: 13px;
+                padding: 10px 6px;
+                min-height: 40px;
+            }
+            
+            .game-board {
+                gap: 4px;
+                margin-bottom: 8px;
+                max-width: 100%;
+                height: calc(100vh - 180px);
+                max-height: 400px;
+            }
+            
+            .game-board.easy {
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+            }
+            
+            .game-board.medium {
+                grid-template-columns: repeat(5, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+            }
+            
+            .game-board.hard {
+                grid-template-columns: repeat(6, 1fr);
+                grid-template-rows: repeat(5, 1fr);
+            }
+            
+            .card {
+                font-size: 2.2em;
+                border-radius: 6px;
+            }
+            
+            .card-back {
+                font-size: 2em;
+            }
+            
+            .game-info {
+                margin-bottom: 12px;
+                padding: 8px;
+            }
+            
+            .score {
+                font-size: 1.1em;
+            }
+            
+            .controls {
+                gap: 8px;
+            }
+            
+            .reset-btn, .new-game-btn {
+                font-size: 13px;
+                padding: 10px 15px;
+                min-height: 40px;
+                max-width: 120px;
+            }
+            
+            .winner-message {
+                font-size: 1.1em;
+                padding: 10px;
+                margin-top: 12px;
+            }
+        }
+
+        @media (min-width: 481px) and (max-width: 768px) {
+            .game-board {
+                gap: 8px;
+                max-width: 500px;
+                height: calc(100vh - 220px);
+                max-height: 450px;
+            }
+            
+            .game-board.easy {
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+            }
+            
+            .game-board.medium {
+                grid-template-columns: repeat(5, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+            }
+            
+            .game-board.hard {
+                grid-template-columns: repeat(6, 1fr);
+                grid-template-rows: repeat(5, 1fr);
+            }
+            
+            .card {
+                font-size: 3em;
+            }
+            
+            .card-back {
+                font-size: 2.5em;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .game-board {
+                gap: 10px;
+                max-width: 600px;
+                height: calc(100vh - 240px);
+                max-height: 500px;
+            }
+            
+            .game-board.easy {
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+            }
+            
+            .game-board.medium {
+                grid-template-columns: repeat(5, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+            }
+            
+            .game-board.hard {
+                grid-template-columns: repeat(6, 1fr);
+                grid-template-rows: repeat(5, 1fr);
+            }
+            
+            .card {
+                font-size: 3.8em;
+            }
+            
+            .card-back {
+                font-size: 3.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Banner de instalación PWA -->
+    <div id="install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
+         background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:14px 16px;
+         align-items:center;gap:12px;box-shadow:0 -4px 16px rgba(0,0,0,0.25);
+         font-family:Arial,sans-serif;font-size:14px;">
+        <span style="font-size:22px">🎴</span>
+        <span style="flex:1;line-height:1.3">
+            <strong>Instalar Memoji</strong><br>
+            <small style="opacity:0.85">Juega sin conexión desde tu pantalla de inicio</small>
+        </span>
+        <button id="install-btn" style="background:#fff;color:#764ba2;border:none;border-radius:20px;
+                padding:8px 18px;font-weight:bold;cursor:pointer;font-size:13px;white-space:nowrap;">
+            Instalar
+        </button>
+        <button id="install-dismiss" style="background:none;border:none;color:#fff;cursor:pointer;
+                font-size:20px;line-height:1;padding:4px 6px;opacity:0.7;" title="Cerrar">✕</button>
+    </div>
+
+    <div class="fullscreen-controls">
+        <button class="fullscreen-btn" id="fullscreenToggle" onclick="toggleFullscreen()" title="Pantalla completa">⛶</button>
+    </div>
+
+    <div class="container">
+        <h1><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="1em" height="1em" style="vertical-align:-0.15em" aria-hidden="true"><path fill="#FFCC4D" d="M35.734 19.929C35.375 16.66 35 15 34 13c0 0 3-9 1-12.7-.674-1.246-7.404 1.688-10 3.7 0 0-4-.998-7-.998S11 4 11 4C8.404 1.988 1.674-.946 1 .3-1 4 2 13 2 13 1 15 .625 16.66.266 19.929-.129 23.513.657 26.37 1 27c.39.716 2.367 3.025 5 5 4 3 10 4 12 4s8-1 12-4c2.633-1.975 4.61-4.284 5-5 .343-.63 1.129-3.487.734-7.071z"/><path fill="#E75A70" d="M18 19.5c3 0 3 .5 3 1.5s-1.5 3-3 3-3-2-3-3-.001-1.5 3-1.5z"/><path fill="#F18F26" d="M2 3c.447-1.342 5.64 1 6.64 2C8.64 5 4 8 3 11c0 0-2-5-1-8zm32 0c-.447-1.342-5.64 1-6.64 2 0 0 4.64 3 5.64 6 0 0 2-5 1-8z"/><path fill="#FFCC4D" d="M4.934 5.603C4.934 4.189 11 7 10 8s-2 1.603-3 2.603-2.066-4-2.066-5zm26.132 0C31.066 4.189 25 7 26 8s2 1.603 3 2.603 2.066-4 2.066-5z"/><path fill="#FEE7B8" d="M.701 25c-.148 0-.294-.065-.393-.19-.171-.217-.134-.531.083-.702.162-.127 4.02-3.12 10.648-2.605.275.02.481.261.46.536-.021.275-.257.501-.537.46-6.233-.474-9.915 2.366-9.951 2.395-.093.071-.202.106-.31.106zm8.868-4.663c-.049 0-.1-.007-.149-.022-4.79-1.497-8.737-.347-8.777-.336-.265.081-.543-.07-.623-.335-.079-.265.071-.543.335-.622.173-.052 4.286-1.247 9.362.338.264.083.411.363.328.627-.066.213-.263.35-.476.35zM35.299 25c.148 0 .294-.065.393-.19.171-.217.134-.531-.083-.702-.162-.127-4.02-3.12-10.648-2.605-.275.02-.481.261-.46.536.021.275.257.501.537.46 6.233-.474 9.915 2.366 9.951 2.395.093.071.202.106.31.106zm-8.868-4.663c.049 0 .1-.007.149-.022 4.79-1.497 8.737-.347 8.777-.336.265.081.543-.07.623-.335.079-.265-.071-.543-.335-.622-.173-.052-4.286-1.247-9.362.338-.264.083-.411.363-.328.627.065.213.263.35.476.35z"/><path fill="#292F33" d="M28.023 24.191C27.046 24.383 23 26 18 26s-9.046-1.617-10.023-1.809C7 24 6.885 25.264 7.442 27.132 8 29 11 33 18 33s10-4 10.558-5.868c.557-1.868.442-3.132-.535-2.941z"/><path fill="#F5F8FA" d="M8 25s5 2 10 2 10-2 10-2-.5 3-1.5 3-1.5-1-1.5-1-4 2-7 2-7-2-7-2-.5 1-1.5 1S8 25 8 25z"/><path fill="#292F33" d="M28.416 17.723C28.355 17.632 26.901 15.5 24 15.5c-2.9 0-4.355 2.132-4.416 2.223-.135.202-.104.47.071.638.174.167.446.185.643.042.012-.01 1.262-.903 3.702-.903 2.426 0 3.674.881 3.702.901.089.066.194.099.298.099.124 0 .248-.046.344-.137.177-.167.207-.438.072-.64zm-12 0C16.355 17.632 14.901 15.5 12 15.5c-2.9 0-4.355 2.132-4.416 2.223-.134.202-.104.47.071.638.175.167.447.185.642.042.013-.01 1.262-.903 3.703-.903 2.426 0 3.674.881 3.702.901.089.066.194.099.298.099.124 0 .248-.046.344-.137.177-.167.207-.438.072-.64zM31.001 16c-.305 0-.604-.138-.801-.4-2.641-3.521-6.061-3.599-6.206-3.6-.55-.006-.994-.456-.991-1.005.003-.551.447-.995.997-.995.184 0 4.537.05 7.8 4.4.332.442.242 1.069-.2 1.4-.18.135-.39.2-.599.2zM4.999 16c-.208 0-.419-.065-.599-.2-.442-.331-.531-.958-.2-1.4C7.462 10.05 11.816 10 12 10c.552 0 1 .448 1 1 0 .551-.445.998-.996 1-.156.002-3.569.086-6.205 3.6-.195.262-.496.4-.8.4z"/></svg> Memoji</h1>
+        
+        <div class="game-setup" id="gameSetup">
+            <div class="player-mode-selector">
+                <h3>Selecciona el modo de juego:</h3>
+                <div class="player-mode-buttons">
+                    <button class="player-mode-btn active" data-players="1">👤 1 Jugador</button>
+                    <button class="player-mode-btn" data-players="2">👥 2 Jugadores</button>
+                </div>
+            </div>
+            <div class="difficulty-selector">
+                <h3>Selecciona la dificultad:</h3>
+                <div class="difficulty-buttons">
+                    <button class="difficulty-btn active" data-difficulty="easy">🟢 Fácil (4x4)</button>
+                    <button class="difficulty-btn" data-difficulty="medium">🟡 Medio (4x5)</button>
+                    <button class="difficulty-btn" data-difficulty="hard">🔴 Difícil (5x6)</button>
+                </div>
+            </div>
+            <div class="category-selector">
+                <h3>Selecciona una categoría:</h3>
+                <div class="category-buttons">
+                    <button class="category-btn active" data-category="animals">🐾 Animales</button>
+                    <button class="category-btn" data-category="food">🍕 Comida</button>
+                    <button class="category-btn" data-category="sports">⚽ Deportes</button>
+                    <button class="category-btn" data-category="nature">🌿 Naturaleza</button>
+                    <button class="category-btn" data-category="objects">📱 Objetos</button>
+                    <button class="category-btn" data-category="faces">😀 Caras</button>
+                    <button class="category-btn" data-category="vehicles">🚗 Vehículos</button>
+                    <button class="category-btn" data-category="weather">☀️ Clima</button>
+                    <button class="category-btn" data-category="music">🎵 Música</button>
+                    <button class="category-btn" data-category="travel">✈️ Viajes</button>
+                </div>
+            </div>
+            <button class="start-btn" onclick="startGame()">¡Comenzar Juego!</button>
+        </div>
+
+        <div class="game-area" id="gameArea" style="display: none;">
+            <div class="game-info" id="gameInfo">
+                <div class="player-info active player1" id="player1Info">
+                    <div>🔴 Jugador 1</div>
+                    <div class="score" id="player1Score">0</div>
+                </div>
+                <div class="player-info" id="player2Info">
+                    <div>🔵 Jugador 2</div>
+                    <div class="score" id="player2Score">0</div>
+                </div>
+                <div class="player-info" id="singlePlayerInfo" style="display: none;">
+                    <div>👤 Jugador</div>
+                    <div class="score" id="singlePlayerScore">0</div>
+                    <div class="moves" id="movesCounter">Movimientos: 0</div>
+                </div>
+            </div>
+
+            <div class="game-board" id="gameBoard"></div>
+
+            <div class="controls">
+                <button class="reset-btn" onclick="resetGame()">Reiniciar</button>
+                <button class="new-game-btn" onclick="newGame()">Nuevo Juego</button>
+            </div>
+
+            <div class="winner-message" id="winnerMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        // Categorías de emojis
+        const categories = {
+            animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔'],
+            food: ['🍎', '🍊', '🍌', '🍇', '🍓', '🍑', '🥝', '🍒', '🍉', '🍈', '🍍', '🥥', '🍅', '🥕', '🌽', '🥔'],
+            sports: ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🎯', '🏹'],
+            nature: ['🌱', '🌿', '🍀', '🌾', '🌵', '🌲', '🌳', '🌴', '🌺', '🌸', '🌼', '🌻', '🌷', '🌹', '🥀', '🌰'],
+            objects: ['📱', '💻', '⌚', '📷', '🎮', '📺', '🔔', '🔑', '💡', '🔦', '🕯️', '📞', '☎️', '📠', '📧', '📟'],
+            faces: ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰'],
+            vehicles: ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🚲', '🚚', '🚛', '🚜', '🏍️', '🛵'],
+            weather: ['☀️', '🌤️', '⛅', '🌕', '☁️', '🌦️', '🌧️', '⛈️', '🌩️', '🌨️', '❄️', '☃️', '⛄', '🌪️', '🌈', '🌊'],
+            music: ['🎵', '🎶', '🎼', '🎹', '🥁', '🎷', '🎺', '🎸', '🪕', '🎻', '🎤', '🎧', '📻', '🎙️', '🎚️', '🎛️'],
+            travel: ['✈️', '🚁', '🚀', '🛸', '🚂', '🚃', '🚄', '🚅', '🚆', '🚇', '🚈', '🚉', '🚊', '🚝', '🚞', '🚋']
+        };
+
+        // Configuraciones de dificultad
+        const difficulties = {
+            easy: { rows: 4, cols: 4, pairs: 8, name: 'Fácil' },
+            medium: { rows: 4, cols: 5, pairs: 10, name: 'Medio' },
+            hard: { rows: 5, cols: 6, pairs: 15, name: 'Difícil' }
+        };
+
+        let currentCategory = 'animals';
+        let currentDifficulty = 'easy';
+        let playerMode = 1;
+        let gameBoard = [];
+        let flippedCards = [];
+        let currentPlayer = 1;
+        let scores = { 1: 0, 2: 0 };
+        let matchedPairs = 0;
+        let gameStarted = false;
+        let moves = 0;
+
+        // Sistema de audio
+        let audioContext;
+        let soundEnabled = true;
+        let volume = 0.2;
+
+        // Inicializar audio context
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.log('Web Audio API no soportada');
+                soundEnabled = false;
+            }
+        }
+
+        // Crear sonidos sintéticos
+        function createSound(frequency, duration, type = 'sine') {
+            if (!audioContext || !soundEnabled) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = type;
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        // Efectos de sonido
+        function playCardFlip() {
+            createSound(800, 0.1, 'square');
+        }
+
+        function playMatch() {
+            createSound(523, 0.2, 'sine');
+            setTimeout(() => createSound(659, 0.2, 'sine'), 100);
+            setTimeout(() => createSound(784, 0.3, 'sine'), 200);
+        }
+
+        function playMismatch() {
+            createSound(200, 0.3, 'sawtooth');
+        }
+
+        function playGameStart() {
+            createSound(440, 0.2, 'sine');
+            setTimeout(() => createSound(554, 0.2, 'sine'), 150);
+            setTimeout(() => createSound(659, 0.3, 'sine'), 300);
+        }
+
+        function playGameEnd() {
+            createSound(659, 0.2, 'sine');
+            setTimeout(() => createSound(523, 0.2, 'sine'), 200);
+            setTimeout(() => createSound(440, 0.3, 'sine'), 400);
+        }
+
+        function playButtonClick() {
+            createSound(600, 0.1, 'triangle');
+        }
+
+        // Funciones de pantalla completa
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                enterFullscreen();
+            } else {
+                exitFullscreen();
+            }
+        }
+
+        function enterFullscreen() {
+            const container = document.querySelector('.container');
+            container.classList.add('fullscreen');
+            
+            if (container.requestFullscreen) {
+                container.requestFullscreen();
+            } else if (container.webkitRequestFullscreen) {
+                container.webkitRequestFullscreen();
+            } else if (container.msRequestFullscreen) {
+                container.msRequestFullscreen();
+            }
+            
+            updateFullscreenButton(true);
+            playButtonClick();
+        }
+
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+            
+            updateFullscreenButton(false);
+            playButtonClick();
+        }
+
+        function updateFullscreenButton(isFullscreen) {
+            const btn = document.getElementById('fullscreenToggle');
+            btn.textContent = isFullscreen ? '⛶' : '⛶';
+            btn.classList.toggle('active', isFullscreen);
+        }
+
+        // Detectar cambios de pantalla completa
+        document.addEventListener('fullscreenchange', function() {
+            const isFullscreen = !!document.fullscreenElement;
+            const container = document.querySelector('.container');
+            
+            if (isFullscreen) {
+                container.classList.add('fullscreen');
+            } else {
+                container.classList.remove('fullscreen');
+            }
+            
+            updateFullscreenButton(isFullscreen);
+        });
+
+        // Detectar cambios de pantalla completa en navegadores webkit
+        document.addEventListener('webkitfullscreenchange', function() {
+            const isFullscreen = !!document.webkitFullscreenElement;
+            const container = document.querySelector('.container');
+            
+            if (isFullscreen) {
+                container.classList.add('fullscreen');
+            } else {
+                container.classList.remove('fullscreen');
+            }
+            
+            updateFullscreenButton(isFullscreen);
+        });
+
+
+        // Selección de modo de juego
+        document.querySelectorAll('.player-mode-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.player-mode-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                playerMode = parseInt(this.dataset.players);
+                playButtonClick();
+            });
+        });
+
+        // Selección de dificultad
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentDifficulty = this.dataset.difficulty;
+                playButtonClick();
+            });
+        });
+
+        // Selección de categoría
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentCategory = this.dataset.category;
+                playButtonClick();
+            });
+        });
+
+        function startGame() {
+            playGameStart();
+            gameStarted = true;
+            document.getElementById('gameSetup').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            document.querySelector('h1').classList.add('hidden');
+            initializeGame();
+        }
+
+        function initializeGame() {
+            // Resetear variables del juego
+            scores = { 1: 0, 2: 0 };
+            currentPlayer = 1;
+            matchedPairs = 0;
+            flippedCards = [];
+            moves = 0;
+            
+            // Actualizar interfaz
+            updatePlayerDisplay();
+            updateScores();
+            document.getElementById('winnerMessage').style.display = 'none';
+            
+            // Crear tablero
+            createGameBoard();
+        }
+
+        function createGameBoard() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+            
+            // Obtener configuración de dificultad
+            const difficulty = difficulties[currentDifficulty];
+            
+            // Aplicar clase de dificultad al tablero
+            board.className = `game-board ${currentDifficulty}`;
+            
+            // Seleccionar emojis únicos según la dificultad
+            const selectedEmojis = categories[currentCategory].slice(0, difficulty.pairs);
+            
+            // Crear pares
+            gameBoard = [...selectedEmojis, ...selectedEmojis];
+            
+            // Mezclar las cartas
+            gameBoard = shuffleArray(gameBoard);
+            
+            // Crear elementos de cartas
+            gameBoard.forEach((emoji, index) => {
+                const card = document.createElement('div');
+                card.className = 'card card-back';
+                card.dataset.index = index;
+                card.dataset.emoji = emoji;
+                card.innerHTML = '?';
+                card.addEventListener('click', () => flipCard(index));
+                board.appendChild(card);
+            });
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function flipCard(index) {
+            if (!gameStarted) return;
+            
+            const card = document.querySelector(`[data-index="${index}"]`);
+            
+            // No permitir voltear cartas ya volteadas o emparejadas
+            if (card.classList.contains('flipped') || card.classList.contains('matched')) {
+                return;
+            }
+            
+            // No permitir voltear más de 2 cartas a la vez
+            if (flippedCards.length >= 2) {
+                return;
+            }
+            
+            // Voltear la carta
+            card.classList.add('flipped');
+            card.innerHTML = card.dataset.emoji;
+            flippedCards.push({ index, card });
+            playCardFlip();
+            
+            // Si se han volteado 2 cartas, verificar si coinciden
+            if (flippedCards.length === 2) {
+                setTimeout(checkMatch, 1000);
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            moves++;
+            
+            if (card1.card.dataset.emoji === card2.card.dataset.emoji) {
+                // ¡Coincidencia!
+                playMatch();
+                const playerClass = currentPlayer === 1 ? 'player1' : 'player2';
+                card1.card.classList.add('matched', playerClass);
+                card2.card.classList.add('matched', playerClass);
+                
+                // Incrementar puntuación del jugador actual
+                scores[currentPlayer]++;
+                updateScores();
+                matchedPairs++;
+                
+                // Verificar si el juego ha terminado
+                const difficulty = difficulties[currentDifficulty];
+                if (matchedPairs === difficulty.pairs) {
+                    endGame();
+                    return;
+                }
+                
+                // En modo 2 jugadores, el jugador repite turno al acertar
+            } else {
+                // No coinciden, voltear las cartas de vuelta
+                playMismatch();
+                card1.card.classList.remove('flipped');
+                card2.card.classList.remove('flipped');
+                card1.card.innerHTML = '?';
+                card2.card.innerHTML = '?';
+                
+                // Cambiar turno solo en modo 2 jugadores
+                if (playerMode === 2) {
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    updatePlayerDisplay();
+                }
+            }
+            
+            // Limpiar cartas volteadas
+            flippedCards = [];
+        }
+
+        function updatePlayerDisplay() {
+            const player1Info = document.getElementById('player1Info');
+            const player2Info = document.getElementById('player2Info');
+            const singlePlayerInfo = document.getElementById('singlePlayerInfo');
+            
+            if (playerMode === 1) {
+                // Modo 1 jugador: ocultar jugadores, mostrar información individual
+                player1Info.style.display = 'none';
+                player2Info.style.display = 'none';
+                singlePlayerInfo.style.display = 'block';
+                singlePlayerInfo.classList.add('active', 'player1');
+            } else {
+                // Modo 2 jugadores: mostrar ambos jugadores, ocultar información individual
+                player1Info.style.display = 'block';
+                player2Info.style.display = 'block';
+                singlePlayerInfo.style.display = 'none';
+                
+                // Remover todas las clases activas
+                player1Info.classList.remove('active', 'player1', 'player2');
+                player2Info.classList.remove('active', 'player1', 'player2');
+                
+                // Aplicar clases según el jugador activo
+                if (currentPlayer === 1) {
+                    player1Info.classList.add('active', 'player1');
+                } else {
+                    player2Info.classList.add('active', 'player2');
+                }
+            }
+        }
+
+        function updateScores() {
+            if (playerMode === 1) {
+                document.getElementById('singlePlayerScore').textContent = scores[1];
+                document.getElementById('movesCounter').textContent = `Movimientos: ${moves}`;
+            } else {
+                document.getElementById('player1Score').textContent = scores[1];
+                document.getElementById('player2Score').textContent = scores[2];
+            }
+        }
+
+        function endGame() {
+            playGameEnd();
+            gameStarted = false;
+            let winnerMessage = '';
+            
+            if (playerMode === 1) {
+                // Modo 1 jugador: mostrar puntuación y movimientos
+                const efficiency = Math.round((scores[1] / moves) * 100);
+                winnerMessage = `🎉 ¡Felicidades! Completaste el juego en ${moves} movimientos con ${efficiency}% de eficiencia. 🎉`;
+            } else {
+                // Modo 2 jugadores: determinar ganador
+                if (scores[1] > scores[2]) {
+                    winnerMessage = '🎉 ¡Jugador 1 (🔴) gana! 🎉';
+                } else if (scores[2] > scores[1]) {
+                    winnerMessage = '🎉 ¡Jugador 2 (🔵) gana! 🎉';
+                } else {
+                    winnerMessage = '🤝 ¡Empate! 🤝';
+                }
+            }
+            
+            document.getElementById('winnerMessage').textContent = winnerMessage;
+            document.getElementById('winnerMessage').style.display = 'block';
+        }
+
+        function resetGame() {
+            if (!gameStarted) return;
+            playButtonClick();
+            
+            // Voltear todas las cartas
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.remove('flipped', 'matched', 'player1', 'player2');
+                card.innerHTML = '?';
+            });
+            
+            // Resetear variables
+            flippedCards = [];
+            currentPlayer = 1;
+            scores = { 1: 0, 2: 0 };
+            matchedPairs = 0;
+            moves = 0;
+            
+            // Actualizar interfaz
+            updatePlayerDisplay();
+            updateScores();
+            document.getElementById('winnerMessage').style.display = 'none';
+            
+            gameStarted = true;
+        }
+
+        function newGame() {
+            playButtonClick();
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('gameSetup').style.display = 'block';
+            document.querySelector('h1').classList.remove('hidden');
+            gameStarted = false;
+        }
+
+        // Funciones para manejar orientación
+        function lockOrientation() {
+            if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('portrait').catch(function(error) {
+                    console.log('No se pudo bloquear la orientación:', error);
+                });
+            }
+        }
+
+        function handleOrientationChange() {
+            if (window.innerHeight > window.innerWidth) {
+                // Modo vertical
+                document.body.classList.remove('landscape-warning');
+            } else {
+                // Modo horizontal
+                document.body.classList.add('landscape-warning');
+            }
+        }
+
+        // Detectar orientación al cargar
+        window.addEventListener('load', function() {
+            initAudio();
+            handleOrientationChange();
+            
+            // Intentar bloquear orientación en móviles
+            if (window.innerWidth <= 768) {
+                lockOrientation();
+            }
+        });
+
+        // Detectar cambios de orientación
+        window.addEventListener('orientationchange', function() {
+            setTimeout(handleOrientationChange, 100);
+        });
+
+        window.addEventListener('resize', handleOrientationChange);
+
+        // Inicializar audio al primer click (requerido por algunos navegadores)
+        document.addEventListener('click', function() {
+            if (!audioContext) {
+                initAudio();
+            }
+        }, { once: true });
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .catch(() => {});
+            });
+        }
+
+        // Banner de instalación PWA
+        let deferredPrompt = null;
+        const installBanner = document.getElementById('install-banner');
+        const installBtn = document.getElementById('install-btn');
+        const installDismiss = document.getElementById('install-dismiss');
+
+        window.addEventListener('beforeinstallprompt', e => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBanner.style.display = 'flex';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            installBanner.style.display = 'none';
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            await deferredPrompt.userChoice;
+            deferredPrompt = null;
+        });
+
+        installDismiss.addEventListener('click', () => {
+            installBanner.style.display = 'none';
+        });
+
+        window.addEventListener('appinstalled', () => {
+            installBanner.style.display = 'none';
+            deferredPrompt = null;
+        });
+    </script>
+</body>
+</html>

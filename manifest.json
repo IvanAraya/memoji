@@ -2,7 +2,7 @@
   "name": "Memoji - Juego de Memoria",
   "short_name": "Memoji",
   "description": "Juego de memoria con emojis. ¡Encuentra todos los pares!",
-  "start_url": "./Memoji.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#667eea",

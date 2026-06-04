@@ -1,6 +1,6 @@
 const CACHE_NAME = 'memoji-v1';
 const ASSETS = [
-  './Memoji.html',
+  './index.html',
   './manifest.json',
   './icons/icon.svg',
   './icons/icon-maskable.svg',

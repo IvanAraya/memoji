@@ -114,7 +114,7 @@
 
         .difficulty-buttons {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 8px;
             justify-content: center;
         }
@@ -240,6 +240,15 @@
             grid-template-rows: repeat(5, 1fr);
         }
 
+        .game-board.expert {
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(7, 1fr);
+        }
+
+        .game-board.expert .card {
+            font-size: 2em;
+        }
+
         .card {
             background: #f0f0f0;
             border-radius: 8px;
@@ -344,6 +353,7 @@
         }
 
         .fullscreen-controls {
+            display: none;
             position: fixed;
             top: 10px;
             right: 10px;
@@ -483,6 +493,15 @@
                 grid-template-columns: repeat(6, 1fr);
                 grid-template-rows: repeat(5, 1fr);
             }
+
+            .game-board.expert {
+                grid-template-columns: repeat(6, 1fr);
+                grid-template-rows: repeat(7, 1fr);
+            }
+
+            .game-board.expert .card {
+                font-size: 2em;
+            }
             
             .card {
                 font-size: 2.2em;
@@ -542,6 +561,15 @@
                 grid-template-columns: repeat(6, 1fr);
                 grid-template-rows: repeat(5, 1fr);
             }
+
+            .game-board.expert {
+                grid-template-columns: repeat(6, 1fr);
+                grid-template-rows: repeat(7, 1fr);
+            }
+
+            .game-board.expert .card {
+                font-size: 2em;
+            }
             
             .card {
                 font-size: 3em;
@@ -573,6 +601,15 @@
             .game-board.hard {
                 grid-template-columns: repeat(6, 1fr);
                 grid-template-rows: repeat(5, 1fr);
+            }
+
+            .game-board.expert {
+                grid-template-columns: repeat(6, 1fr);
+                grid-template-rows: repeat(7, 1fr);
+            }
+
+            .game-board.expert .card {
+                font-size: 2em;
             }
             
             .card {
@@ -626,6 +663,7 @@
                     <button class="difficulty-btn active" data-difficulty="easy">🟢 Fácil (4x4)</button>
                     <button class="difficulty-btn" data-difficulty="medium">🟡 Medio (4x5)</button>
                     <button class="difficulty-btn" data-difficulty="hard">🔴 Difícil (5x6)</button>
+                    <button class="difficulty-btn" data-difficulty="expert">🟣 Experto (7x6)</button>
                 </div>
             </div>
             <div class="category-selector">
@@ -677,23 +715,24 @@
     <script>
         // Categorías de emojis
         const categories = {
-            animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔'],
-            food: ['🍎', '🍊', '🍌', '🍇', '🍓', '🍑', '🥝', '🍒', '🍉', '🍈', '🍍', '🥥', '🍅', '🥕', '🌽', '🥔'],
-            sports: ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🎯', '🏹'],
-            nature: ['🌱', '🌿', '🍀', '🌾', '🌵', '🌲', '🌳', '🌴', '🌺', '🌸', '🌼', '🌻', '🌷', '🌹', '🥀', '🌰'],
-            objects: ['📱', '💻', '⌚', '📷', '🎮', '📺', '🔔', '🔑', '💡', '🔦', '🕯️', '📞', '☎️', '📠', '📧', '📟'],
-            faces: ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰'],
-            vehicles: ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🚲', '🚚', '🚛', '🚜', '🏍️', '🛵'],
-            weather: ['☀️', '🌤️', '⛅', '🌕', '☁️', '🌦️', '🌧️', '⛈️', '🌩️', '🌨️', '❄️', '☃️', '⛄', '🌪️', '🌈', '🌊'],
-            music: ['🎵', '🎶', '🎼', '🎹', '🥁', '🎷', '🎺', '🎸', '🪕', '🎻', '🎤', '🎧', '📻', '🎙️', '🎚️', '🎛️'],
-            travel: ['✈️', '🚁', '🚀', '🛸', '🚂', '🚃', '🚄', '🚅', '🚆', '🚇', '🚈', '🚉', '🚊', '🚝', '🚞', '🚋']
+            animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🦄', '🐙', '🦋'],
+            food: ['🍎', '🍊', '🍌', '🍇', '🍓', '🍑', '🥝', '🍒', '🍉', '🍈', '🍍', '🥥', '🍅', '🥕', '🌽', '🥔', '🍋', '🍐', '🥑', '🍆', '🥦'],
+            sports: ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🎯', '🏹', '🥊', '🥋', '⛳', '🏆', '🛹'],
+            nature: ['🌱', '🌿', '🍀', '🌾', '🌵', '🌲', '🌳', '🌴', '🌺', '🌸', '🌼', '🌻', '🌷', '🌹', '🥀', '🌰', '🍁', '🍂', '🍄', '🌞', '🌙'],
+            objects: ['📱', '💻', '⌚', '📷', '🎮', '📺', '🔔', '🔑', '💡', '🔦', '🕯️', '📞', '☎️', '📠', '📧', '📟', '🖨️', '⌨️', '🖱️', '💾', '🔋'],
+            faces: ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😎', '🤓', '🤩', '😜'],
+            vehicles: ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🚲', '🚚', '🚛', '🚜', '🏍️', '🛵', '🚔', '🚖', '🚍', '🛴', '🛻'],
+            weather: ['☀️', '🌤️', '⛅', '🌕', '☁️', '🌦️', '🌧️', '⛈️', '🌩️', '🌨️', '❄️', '☃️', '⛄', '🌪️', '🌈', '🌊', '🌫️', '🌥️', '🌬️', '⚡', '🔥'],
+            music: ['🎵', '🎶', '🎼', '🎹', '🥁', '🎷', '🎺', '🎸', '🪕', '🎻', '🎤', '🎧', '📻', '🎙️', '🎚️', '🎛️', '🪗', '🪘', '🎬', '🎭', '📯'],
+            travel: ['✈️', '🚁', '🚀', '🛸', '🚂', '🚃', '🚄', '🚅', '🚆', '🚇', '🚈', '🚉', '🚊', '🚝', '🚞', '🚋', '🚢', '⛵', '🚤', '🛳️', '🚠']
         };
 
         // Configuraciones de dificultad
         const difficulties = {
             easy: { rows: 4, cols: 4, pairs: 8, name: 'Fácil' },
             medium: { rows: 4, cols: 5, pairs: 10, name: 'Medio' },
-            hard: { rows: 5, cols: 6, pairs: 15, name: 'Difícil' }
+            hard: { rows: 5, cols: 6, pairs: 15, name: 'Difícil' },
+            expert: { rows: 7, cols: 6, pairs: 21, name: 'Experto' }
         };
 
         let currentCategory = 'animals';

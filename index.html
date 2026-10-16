@@ -620,6 +620,34 @@
                 font-size: 3.2em;
             }
         }
+        /* Durante la partida, el panel ocupa toda la altura disponible */
+        .container.playing {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 40px);
+            height: calc(100dvh - 40px);
+        }
+
+        .container.playing .game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .container.playing .game-board {
+            flex: 1;
+            height: auto;
+            max-height: none;
+            min-height: 0;
+        }
+
+        @media (max-width: 480px) {
+            .container.playing {
+                height: calc(100vh - 30px);
+                height: calc(100dvh - 30px);
+            }
+        }
     </style>
 </head>
 <body>
@@ -920,7 +948,8 @@
             playGameStart();
             gameStarted = true;
             document.getElementById('gameSetup').style.display = 'none';
-            document.getElementById('gameArea').style.display = 'block';
+            document.getElementById('gameArea').style.display = 'flex';
+            document.querySelector('.container').classList.add('playing');
             document.querySelector('h1').classList.add('hidden');
             initializeGame();
         }
@@ -1145,6 +1174,7 @@
         function newGame() {
             playButtonClick();
             document.getElementById('gameArea').style.display = 'none';
+            document.querySelector('.container').classList.remove('playing');
             document.getElementById('gameSetup').style.display = 'block';
             document.querySelector('h1').classList.remove('hidden');
             gameStarted = false;

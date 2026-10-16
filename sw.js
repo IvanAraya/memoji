@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memoji-v2';
+const CACHE_NAME = 'memoji-v3';
 const STATIC_ASSETS = [
   './manifest.json',
   './icons/icon.svg',
